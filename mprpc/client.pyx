@@ -120,14 +120,15 @@ cdef class RPCClient:
         else:
             return False
 
-    def call(self, str method, *args):
+    def call(self, str method, *args, **kwargs):
         """Calls a RPC method.
 
         :param str method: Method name.
         :param args: Method arguments.
+        :param kwargs: Method keyword arguments.
         """
 
-        cdef bytes req = self._create_request(method, args)
+        cdef bytes req = self._create_request(method, args, kwargs)
 
         cdef bytes data
         self._socket.sendall(req)
@@ -151,11 +152,11 @@ cdef class RPCClient:
 
         return self._parse_response(response)
 
-    cdef bytes _create_request(self, method, args):
+    cdef bytes _create_request(self, method, args, kwargs):
         self._msg_id += 1
 
         cdef tuple req
-        req = (MSGPACKRPC_REQUEST, self._msg_id, method, args)
+        req = (MSGPACKRPC_REQUEST, self._msg_id, method, args, kwargs)
 
         return self._packer.pack(req)
 
@@ -232,15 +233,16 @@ class RPCPoolClient(RPCClient, Connection):
         else:
             return False
 
-    def call(self, str method, *args):
+    def call(self, str method, *args, **kwargs):
         """Calls a RPC method.
 
         :param str method: Method name.
         :param args: Method arguments.
+        :param kwargs: Method keyword arguments.
         """
 
         try:
-            return RPCClient.call(self, method, *args)
+            return RPCClient.call(self, method, *args, **kwargs)
 
         except socket.timeout:
             self.reconnect()
