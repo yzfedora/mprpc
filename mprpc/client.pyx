@@ -49,13 +49,14 @@ cdef class RPCClient:
     cdef _tcp_no_delay
     cdef _keep_alive
 
-    def __init__(self, host, port, timeout=None, lazy=False,
+    def __init__(self, host, port, timeout=None, token=None, lazy=False,
                  pack_encoding='utf-8', unpack_encoding='utf-8',
                  pack_params=None, unpack_params=None,
                  tcp_no_delay=False, keep_alive=False):
         self._host = host
         self._port = port
         self._timeout = timeout
+        self._token = token
 
         self._msg_id = 0
         self._socket = None
@@ -156,7 +157,7 @@ cdef class RPCClient:
         self._msg_id += 1
 
         cdef tuple req
-        req = (MSGPACKRPC_REQUEST, self._msg_id, method, args, kwargs)
+        req = (MSGPACKRPC_REQUEST, self._token, self._msg_id, method, args, kwargs)
 
         return self._packer.pack(req)
 
@@ -204,7 +205,7 @@ class RPCPoolClient(RPCClient, Connection):
         Unpacker
     """
 
-    def __init__(self, host, port, timeout=None, lifetime=None,
+    def __init__(self, host, port, timeout=None, token=None, lifetime=None,
                  pack_encoding='utf-8', unpack_encoding='utf-8',
                  pack_params=dict(), unpack_params=dict(use_list=False),
                  tcp_no_delay=False, keep_alive=False):
@@ -216,7 +217,7 @@ class RPCPoolClient(RPCClient, Connection):
             self._lifetime = None
 
         RPCClient.__init__(
-            self, host, port, timeout=timeout, lazy=True,
+            self, host, port, timeout=timeout, token=token, lazy=True,
             pack_encoding=pack_encoding, unpack_encoding=unpack_encoding,
             pack_params=pack_params, unpack_params=unpack_params,
             tcp_no_delay=tcp_no_delay, keep_alive=keep_alive)

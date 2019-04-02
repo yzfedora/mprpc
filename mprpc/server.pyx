@@ -51,6 +51,7 @@ cdef class RPCServer:
 
         self._tcp_no_delay = kwargs.pop('tcp_no_delay', False)
         self._methods = {}
+        self._token = kwargs.pop('token')
 
         self._packer = msgpack.Packer(encoding=pack_encoding, **pack_params)
 
@@ -102,9 +103,12 @@ cdef class RPCServer:
                                             **self._unpack_params)
                 continue
 
-            (msg_id, method, args, kwargs) = self._parse_request(req)
+            (token, msg_id, method, args, kwargs) = self._parse_request(req)
 
             try:
+                if token != self._token:
+                    raise RPCProtocolError('Invalid token')
+
                 ret = method(*args, **kwargs)
 
             except Exception, e:
@@ -114,12 +118,12 @@ cdef class RPCServer:
                 self._send_result(ret, msg_id, conn)
 
     cdef tuple _parse_request(self, req):
-        if (len(req) != 5 or req[0] != MSGPACKRPC_REQUEST):
+        if (len(req) != 6 or req[0] != MSGPACKRPC_REQUEST):
             raise RPCProtocolError('Invalid protocol')
 
         cdef int msg_id
 
-        (_, msg_id, method_name, args, kwargs) = req
+        (_, token, msg_id, method_name, args, kwargs) = req
 
         method = self._methods.get(method_name, None)
 
@@ -136,7 +140,7 @@ cdef class RPCServer:
 
             self._methods[method_name] = method
 
-        return (msg_id, method, args, kwargs)
+        return (token, msg_id, method, args, kwargs)
 
     cdef _send_result(self, object result, int msg_id, _RPCConnection conn):
         msg = (MSGPACKRPC_RESPONSE, msg_id, None, result)
