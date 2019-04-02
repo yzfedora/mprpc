@@ -12,8 +12,8 @@ setup(
     url='http://github.com/studio-ousia/mprpc',
     packages=['mprpc'],
     ext_modules=[
-        Extension('mprpc.client', ['mprpc/client.c']),
-        Extension('mprpc.server', ['mprpc/server.c'])
+        Extension('mprpc.client', ['mprpc/client.pyx']),
+        Extension('mprpc.server', ['mprpc/server.pyx'])
     ],
     license=open('LICENSE').read(),
     include_package_data=True,
