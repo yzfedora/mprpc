@@ -1,6 +1,7 @@
 # cython: profile=False
 # -*- coding: utf-8 -*-
 
+import traceback
 import gevent.socket
 import msgpack
 
@@ -112,7 +113,7 @@ cdef class RPCServer:
                 ret = method(*args, **kwargs)
 
             except Exception, e:
-                self._send_error(str(e), msg_id, conn)
+                self._send_error(traceback.format_exc(), msg_id, conn)
 
             else:
                 self._send_result(ret, msg_id, conn)
